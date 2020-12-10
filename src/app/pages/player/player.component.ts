@@ -1,51 +1,78 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
+import { AudioService } from '../../services/audio.service';
+import { CloudService } from '../../services/cloud.service';
+import { StreamState } from '../../interfaces/stream-state';
 
 @Component({
   selector: 'app-player',
   templateUrl: './player.component.html',
   styleUrls: ['./player.component.scss']
 })
-export class PlayerComponent implements OnInit {
-  state: any;
+export class PlayerComponent {
+  files: Array<any> = [];
+  state: StreamState = {} as StreamState ;
   currentFile: any = {};
 
-  files: Array<any> = [
-    { name: 'First Song', artist: 'Inder' },
-    { name: 'Second Song', artist: 'You' }
-  ];
+  constructor(private audioService: AudioService, cloudService: CloudService) {
+    // get media files
+    cloudService.getFiles().subscribe(files => {
+      this.files = files;
+    });
 
-  isFirstPlaying(): boolean {
-    return false;
-  }
-  isLastPlaying(): boolean {
-    return true;
-  }
-
-  next(): void {
-
-  }
-  pause(): void {
-
-  }
-  play(): void {
-
+    // listen to stream state
+    this.audioService.getState()
+      .subscribe(state => {
+        this.state = state;
+      });
   }
 
-  previous(): void {
-
+  playStream(url: string) {
+    debugger
+    this.audioService.playStream(url)
+      .subscribe(events => {
+        // listening for fun here
+      });
   }
 
-  onSliderChangeEnd(event: unknown): void {
-
+  openFile(file: any, index: any) {
+    this.currentFile = { index, file };
+    this.audioService.stop();
+    this.playStream(file.url);
   }
 
-  openFile(file: unknown, index: unknown): void {
-
+  pause() {
+    this.audioService.pause();
   }
 
-  constructor() { }
-
-  ngOnInit(): void {
+  play() {
+    this.audioService.play();
   }
 
+  stop() {
+    this.audioService.stop();
+  }
+
+  next() {
+    const index = this.currentFile.index + 1;
+    const file = this.files[index];
+    this.openFile(file, index);
+  }
+
+  previous() {
+    const index = this.currentFile.index - 1;
+    const file = this.files[index];
+    this.openFile(file, index);
+  }
+
+  isFirstPlaying() {
+    return this.currentFile.index === 0;
+  }
+
+  isLastPlaying() {
+    return this.currentFile.index === this.files.length - 1;
+  }
+
+  onSliderChangeEnd(change: any) {
+    this.audioService.seekTo(change.value);
+  }
 }
