@@ -1,18 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, OnDestroy } from '@angular/core';
 import { AudioService } from '../../services/audio.service';
 import { CloudService } from '../../services/cloud.service';
 import { StreamState } from '../../interfaces/stream-state';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-player',
   templateUrl: './player.component.html',
   styleUrls: ['./player.component.scss']
 })
-export class PlayerComponent {
+export class PlayerComponent implements OnDestroy {
   files: Array<any> = [];
-  state: StreamState = {} as StreamState ;
+  state: StreamState = {} as StreamState;
   currentFile: any = {};
-
+  subcription: Subscription;
   constructor(private audioService: AudioService, cloudService: CloudService) {
     // get media files
     cloudService.getFiles().subscribe(files => {
@@ -25,13 +26,17 @@ export class PlayerComponent {
         this.state = state;
       });
   }
+  ngOnDestroy(): void {
+    this.subcription.unsubscribe();
+  }
 
   playStream(url: string) {
-    debugger
-    this.audioService.playStream(url)
-      .subscribe(events => {
-        // listening for fun here
-      });
+    const next = (value: any) => {
+      return value;
+    };
+    const error = () => { };
+    this.subcription =  this.audioService.playStream(url)
+      .subscribe(next, error);
   }
 
   openFile(file: any, index: any) {
